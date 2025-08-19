@@ -1,5 +1,5 @@
 from libraries import pd, np, xgb, skl, plt
-#DataFrames
+# Reading csv with pd to create DataFrames
 df_train = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
 
@@ -52,3 +52,17 @@ for col in cat_cols:
 
 # After encoding (test)
 print("Unique values in Product_Info_2 after encoding:", df_train['Product_Info_2'].unique())
+
+
+
+#* Features (inputs)
+X = df_train.drop('Response', axis=1)
+
+#* Target
+y = df_train['Response']
+
+# Setting up training and validation sets
+# We split data into 80% training set and 20% validation set
+# This is done to evaluate the models performance on unseen data
+X_train, X_val, y_train, y_val = skl.model_selection.train_test_split(X, y, test_size=0.2, random_state=10)
+
