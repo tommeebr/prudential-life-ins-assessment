@@ -22,15 +22,15 @@ print('Categorical columns:', cat_cols)
 for col in num_cols:
     if df_train[col].isnull().any():
         median = df_train[col].median()
-        df_train[col].fillna(median)
+        df_train[col] = df_train[col].fillna(median)
         if col in df_test.columns:
-            df_test[col].fillna(median)
+            df_test[col] = df_test[col].fillna(median)
 for col in cat_cols:
     if df_train[col].isnull().any():
         mode = df_train[col].mode()[0]
-        df_train[col].fillna(mode, inplace=True)
+        df_train[col] = df_train[col].fillna(mode)
         if col in df_test.columns:
-            df_test[col].fillna(mode, inplace=True)
+            df_test[col] = df_test[col].fillna(mode)
 
 # Check missing values after imputation
 print('\nMissing values after imputation (train):')
