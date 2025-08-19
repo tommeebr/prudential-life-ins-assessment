@@ -1,4 +1,4 @@
-from libraries import pd, np, xgb, skl, plt, lgb
+from libraries import pd, np, xgb, skl, plt, lgb, optuna
 # Reading csv with pd to create DataFrames
 df_train = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
@@ -64,8 +64,9 @@ y = df_train['Response'] - 1
 # Setting up training and validation sets
 # We split data into 80% training set and 20% validation set
 # This is done to evaluate the models performance on unseen data
-X_train, X_val, y_train, y_val = skl.model_selection.train_test_split(X, y, test_size=0.2, random_state=12)
+X_train, X_val, y_train, y_val = skl.model_selection.train_test_split(X, y, test_size=0.2, random_state=23)
 
+'''
 # Training the model using XGB
 # Softmax function turns scores into probabilities and then picks the class with the highest probability
 # (The most likely response)
@@ -80,16 +81,33 @@ print("xgb Validation accuracy:", skl.metrics.accuracy_score(y_val, y_pred))
 # giving more penalty for predictions that are further away from the true value.
 # QWK ranges from -1 (complete disagreement) to 1 (perfect agreement), with 0 meaning random agreement.
 print("xgb Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
+'''
 
 
+def objective(trial):
+    param = {
+        'objective': 'multiclass',
+        'num_class': 8,
+        'metric': 'multi_logloss',
+        'random_state': 23,
+        'n_estimators': trial.suggest_int('n_estimators', 100, 2000),
+        'max_depth': trial.suggest_int('max_depth', 3, 15),
+        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.2),
+        'subsample': trial.suggest_float('subsample', 0.6, 1.0),
+        'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0),
+        'verbose': -1
+    }
+    model = lgb.LGBMClassifier(**param)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_val)
+    # QWK as the score to maximize
+    return skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic')
 
-# Set up the model for multiclass classification
-model = lgb.LGBMClassifier(objective='multiclass', num_class=8, random_state=23)
-model.fit(X_train, y_train)
+# Split your data (if not already split)
+# X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=10)
 
-# Predict on validation set
-y_pred = model.predict(X_val)
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=30)  # Try 30 different parameter sets
 
-# Evaluate
-print("lgb Validation accuracy:", skl.metrics.accuracy_score(y_val, y_pred))
-print("lgb Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
+print("Best parameters:", study.best_params)
+print("Best QWK score:", study.best_value)
