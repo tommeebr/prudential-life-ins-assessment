@@ -1,4 +1,4 @@
-from libraries import pd, np, xgb, skl, plt
+from libraries import pd, np, xgb, skl, plt, lgb
 # Reading csv with pd to create DataFrames
 df_train = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
@@ -73,10 +73,23 @@ model= xgb.XGBClassifier(objective='multi:softmax', num_class=8, random_state=12
 model.fit(X_train, y_train)
 
 y_pred = model.predict(X_val)
-print("Validation accuracy:", skl.metrics.accuracy_score(y_val, y_pred))
+print("xgb Validation accuracy:", skl.metrics.accuracy_score(y_val, y_pred))
 
 # Calculate and print the Quadratic Weighted Kappa (QWK) score.
 # QWK measures how well the predicted classes agree with the true classes,
 # giving more penalty for predictions that are further away from the true value.
 # QWK ranges from -1 (complete disagreement) to 1 (perfect agreement), with 0 meaning random agreement.
-print("Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
+print("xgb Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
+
+
+
+# Set up the model for multiclass classification
+model = lgb.LGBMClassifier(objective='multiclass', num_class=8, random_state=23)
+model.fit(X_train, y_train)
+
+# Predict on validation set
+y_pred = model.predict(X_val)
+
+# Evaluate
+print("lgb Validation accuracy:", skl.metrics.accuracy_score(y_val, y_pred))
+print("lgb Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
