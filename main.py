@@ -42,7 +42,7 @@ for col in cat_cols:
 le = skl.preprocessing.LabelEncoder()
 
 # Before encoding (test)
-print("Unique values in Product_Info_2 before encoding:", df_train['Product_Info_2'].unique())
+#? print("Unique values in Product_Info_2 before encoding:", df_train['Product_Info_2'].unique())
 
 for col in cat_cols:
     # Fit on combined data to ensure consistency
@@ -51,18 +51,32 @@ for col in cat_cols:
     df_test[col] = le.transform(df_test[col])
 
 # After encoding (test)
-print("Unique values in Product_Info_2 after encoding:", df_train['Product_Info_2'].unique())
+#? print("Unique values in Product_Info_2 after encoding:", df_train['Product_Info_2'].unique())
 
 
 
 #* Features (inputs)
 X = df_train.drop('Response', axis=1)
 
-#* Target
-y = df_train['Response']
+#* Target (-1 so values start at 0)
+y = df_train['Response'] - 1
 
 # Setting up training and validation sets
 # We split data into 80% training set and 20% validation set
 # This is done to evaluate the models performance on unseen data
-X_train, X_val, y_train, y_val = skl.model_selection.train_test_split(X, y, test_size=0.2, random_state=10)
+X_train, X_val, y_train, y_val = skl.model_selection.train_test_split(X, y, test_size=0.2, random_state=12)
 
+# Training the model using XGB
+# Softmax function turns scores into probabilities and then picks the class with the highest probability
+# (The most likely response)
+model= xgb.XGBClassifier(objective='multi:softmax', num_class=8, random_state=12)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_val)
+print("Validation accuracy:", skl.metrics.accuracy_score(y_val, y_pred))
+
+# Calculate and print the Quadratic Weighted Kappa (QWK) score.
+# QWK measures how well the predicted classes agree with the true classes,
+# giving more penalty for predictions that are further away from the true value.
+# QWK ranges from -1 (complete disagreement) to 1 (perfect agreement), with 0 meaning random agreement.
+print("Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
