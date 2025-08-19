@@ -83,31 +83,17 @@ print("xgb Validation accuracy:", skl.metrics.accuracy_score(y_val, y_pred))
 print("xgb Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
 '''
 
+# Optuna was used to optimize the hyperparameters, but tuning didn't help much.
 
-def objective(trial):
-    param = {
-        'objective': 'multiclass',
-        'num_class': 8,
-        'metric': 'multi_logloss',
-        'random_state': 23,
-        'n_estimators': trial.suggest_int('n_estimators', 100, 2000),
-        'max_depth': trial.suggest_int('max_depth', 3, 15),
-        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.2),
-        'subsample': trial.suggest_float('subsample', 0.6, 1.0),
-        'colsample_bytree': trial.suggest_float('colsample_bytree', 0.6, 1.0),
-        'verbose': -1
-    }
-    model = lgb.LGBMClassifier(**param)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_val)
-    # QWK as the score to maximize
-    return skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic')
+model = lgb.LGBMClassifier(
+    objective='multiclass',
+    num_class=8,
+    random_state=23,
+    verbose=-1
+)
+model.fit(X_train, y_train)
 
-# Split your data (if not already split)
-# X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=10)
-
-study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=30)  # Try 30 different parameter sets
-
-print("Best parameters:", study.best_params)
-print("Best QWK score:", study.best_value)
+# Predict and evaluate
+y_pred = model.predict(X_val)
+print("lgb Validation accuracy:", skl.metrics.accuracy_score(y_val, y_pred))
+print("lgb Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
