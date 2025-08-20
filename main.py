@@ -88,3 +88,26 @@ print("XGBOrdinal Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_va
 
 # * Feature engineering time!
 
+offsets = np.zeros(8)  # One offset per class (assuming classes 1-8)
+best_qwk = skl.metrics.cohen_kappa_score(y_val, y_pred_ordinal, weights='quadratic')
+best_offsets = offsets.copy()
+
+def apply_offsets(preds, offsets):
+    preds_offset = preds.copy()
+    for i in range(1, 9):  # classes 1-8
+        preds_offset[preds == i] = np.clip(i + offsets[i-1], 1, 8)
+    return preds_offset.astype(int)
+
+# Simple grid search for demonstration (try offsets -1, 0, +1 for each class)
+for i in range(8):
+    for offset in [-1, 0, 1]:
+        test_offsets = offsets.copy()
+        test_offsets[i] = offset
+        preds_offset = apply_offsets(y_pred_ordinal, test_offsets)
+        qwk = skl.metrics.cohen_kappa_score(y_val, preds_offset, weights='quadratic')
+        if qwk > best_qwk:
+            best_qwk = qwk
+            best_offsets = test_offsets.copy()
+
+print("Best QWK with offsets (experimental):", best_qwk)
+print("Best offsets found:", best_offsets)
