@@ -56,7 +56,7 @@ for col in cat_cols:
 
 
 #* Features (inputs)
-X = df_train.drop('Response', axis=1)
+X = df_train.drop(['Response','Id'], axis=1)
 
 #* Target (-1 so values start at 0)
 y = df_train['Response'] - 1
