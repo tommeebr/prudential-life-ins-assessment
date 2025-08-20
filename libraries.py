@@ -6,3 +6,4 @@ import matplotlib as plt
 import lightgbm as lgb
 import optuna
 import featuretools as ft
+from xgbordinal import XGBOrdinal

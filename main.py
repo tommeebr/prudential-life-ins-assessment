@@ -1,4 +1,4 @@
-from libraries import pd, np, xgb, skl, plt, lgb, optuna, ft
+from libraries import pd, np, xgb, skl, plt, lgb, optuna, ft, XGBOrdinal
 # Reading csv with pd to create DataFrames
 df_train = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
@@ -83,16 +83,24 @@ print("xgb Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pr
 
 
 
+# Testing xgbordinal. The problem with xgboost was the fact it wouldn't respond to the ordinal nature of response.
+# The "Response" column is ordinal because its values (1–8) have a natural order—higher numbers mean higher risk.
+# Standard XGBoost treats these as just separate categories, ignoring the order between them.
+# XGBOrdinal is designed for ordinal data, so it can better capture the ordered relationship between response levels.
 
-# Train Gradient Boosting model
-gb_model = skl.ensemble.GradientBoostingClassifier(
-    n_estimators=250,      
-    max_depth=5,          
-    learning_rate=0.1,    
+ordinal_model = XGBOrdinal(
+    aggregation='weighted', 
+    norm=True,
     random_state=23
 )
-gb_model.fit(X_train, y_train)
 
-# Predict and evaluate
-gb_y_pred = gb_model.predict(X_val)
-print("GradientBoosting QWK:", skl.metrics.cohen_kappa_score(y_val, gb_y_pred, weights='quadratic'))
+# Fit the model
+ordinal_model.fit(X_train, y_train)
+
+# Predict on validation set
+y_pred_ordinal = ordinal_model.predict(X_val)
+
+# Evaluate with QWK
+print("XGBOrdinal Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred_ordinal, weights='quadratic'))
+
+
