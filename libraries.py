@@ -5,3 +5,4 @@ import sklearn as skl
 import matplotlib as plt
 import lightgbm as lgb
 import optuna
+import featuretools as ft

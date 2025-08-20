@@ -1,4 +1,4 @@
-from libraries import pd, np, xgb, skl, plt, lgb, optuna
+from libraries import pd, np, xgb, skl, plt, lgb, optuna, ft
 # Reading csv with pd to create DataFrames
 df_train = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
@@ -149,3 +149,39 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_val)
 print("lgb Validation accuracy (with new features):", skl.metrics.accuracy_score(y_val, y_pred))
 print("lgb Quadratic Weighted Kappa (with new features):", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
+
+
+
+# * Feature Engineering with Featuretools
+
+X_base = df_train.drop('Response', axis=1)
+y = df_train['Response'] - 1
+
+X_train_base, X_val_base, y_train, y_val = skl.model_selection.train_test_split(X_base, y, test_size=0.2, random_state=23)
+
+es_train = ft.EntitySet(id='prudential_train')
+es_train = es_train.add_dataframe(dataframe_name='applicants', dataframe=X_train_base, index='Id')
+feature_matrix_train, _ = ft.dfs(
+    entityset=es_train,
+    target_dataframe_name='applicants',
+    max_depth=1
+)
+
+es_val = ft.EntitySet(id='prudential_val')
+es_val = es_val.add_dataframe(dataframe_name='applicants', dataframe=X_val_base, index='Id')
+feature_matrix_val, _ = ft.dfs(
+    entityset=es_val,
+    target_dataframe_name='applicants',
+    max_depth=1
+)
+
+model = lgb.LGBMClassifier(
+    objective='multiclass',
+    num_class=8,
+    random_state=23,
+    verbose=-1
+)
+model.fit(feature_matrix_train, y_train)
+y_pred = model.predict(feature_matrix_val)
+print("lgb Validation accuracy (with featuretools):", skl.metrics.accuracy_score(y_val, y_pred))
+print("lgb Quadratic Weighted Kappa (with featuretools):", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
