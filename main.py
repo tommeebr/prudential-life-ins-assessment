@@ -94,13 +94,45 @@ ordinal_model = XGBOrdinal(
     random_state=23
 )
 
-# Fit the model
 ordinal_model.fit(X_train, y_train)
 
-# Predict on validation set
 y_pred_ordinal = ordinal_model.predict(X_val)
 
-# Evaluate with QWK
 print("XGBOrdinal Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred_ordinal, weights='quadratic'))
 
 
+
+# * Hyperparameter Tuning!
+
+# Custom scorer (uses qwk for accuracy mesasurements)
+qwk_scorer = skl.metrics.make_scorer(skl.metrics.cohen_kappa_score, weights='quadratic')
+
+param_grid = {
+    'learning_rate': [0.01, 0.05, 0.1, 0.2],
+    'max_depth': [3, 5, 7],
+    'n_estimators': [100, 250, 500]
+}
+
+ordinal_model = XGBOrdinal(
+    aggregation='weighted',
+    norm=True,
+    random_state=23
+)
+
+grid = skl.model_selection.GridSearchCV(
+    estimator=ordinal_model,
+    param_grid=param_grid,
+    scoring=qwk_scorer,
+    cv=3,
+    verbose=2,
+    n_jobs=-1
+)
+
+grid.fit(X_train, y_train)
+
+print("Best parameters found:", grid.best_params_)
+print("Best cross-validation QWK:", grid.best_score_)
+
+best_model = grid.best_estimator_
+y_pred = best_model.predict(X_val)
+print("XGBOrdinal QWK (tuned):", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
