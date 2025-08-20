@@ -66,23 +66,6 @@ y = df_train['Response'] - 1
 # This is done to evaluate the models performance on unseen data
 X_train, X_val, y_train, y_val = skl.model_selection.train_test_split(X, y, test_size=0.2, random_state=23)
 
-
-# Training the model using XGB
-# Softmax function turns scores into probabilities and then picks the class with the highest probability
-# (The most likely response)
-model= xgb.XGBClassifier(objective='multi:softmax', num_class=8, random_state=12)
-model.fit(X_train, y_train)
-
-
-# Calculate and print the Quadratic Weighted Kappa (QWK) score.
-# QWK measures how well the predicted classes agree with the true classes,
-# giving more penalty for predictions that are further away from the true value.
-# QWK ranges from -1 (complete disagreement) to 1 (perfect agreement), with 0 meaning random agreement.
-y_pred = model.predict(X_val)
-print("xgb Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
-
-
-
 # Testing xgbordinal. The problem with xgboost was the fact it wouldn't respond to the ordinal nature of response.
 # The "Response" column is ordinal because its values (1–8) have a natural order—higher numbers mean higher risk.
 # Standard XGBoost treats these as just separate categories, ignoring the order between them.
