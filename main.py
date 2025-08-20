@@ -87,4 +87,11 @@ y_pred_ordinal = ordinal_model.predict(X_val)
 print("XGBOrdinal Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred_ordinal, weights='quadratic'))
 
 
+# * Feature importance
 
+feat_imp = ordinal_model.feature_importance(importance_type='gain')
+feat_imp_sorted = sorted(feat_imp.items(), key=lambda x: x[1], reverse=True)
+
+print("\nFeature importances (most to least):")
+for feature, importance in feat_imp_sorted:
+    print(f"{feature}: {importance:.4f}")
