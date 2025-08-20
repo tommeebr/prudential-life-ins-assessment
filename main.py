@@ -73,11 +73,26 @@ X_train, X_val, y_train, y_val = skl.model_selection.train_test_split(X, y, test
 model= xgb.XGBClassifier(objective='multi:softmax', num_class=8, random_state=12)
 model.fit(X_train, y_train)
 
+
 # Calculate and print the Quadratic Weighted Kappa (QWK) score.
 # QWK measures how well the predicted classes agree with the true classes,
 # giving more penalty for predictions that are further away from the true value.
 # QWK ranges from -1 (complete disagreement) to 1 (perfect agreement), with 0 meaning random agreement.
+y_pred = model.predict(X_val)
 print("xgb Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred, weights='quadratic'))
 
 
 
+
+# Train Gradient Boosting model
+gb_model = skl.ensemble.GradientBoostingClassifier(
+    n_estimators=250,      
+    max_depth=5,          
+    learning_rate=0.1,    
+    random_state=23
+)
+gb_model.fit(X_train, y_train)
+
+# Predict and evaluate
+gb_y_pred = gb_model.predict(X_val)
+print("GradientBoosting QWK:", skl.metrics.cohen_kappa_score(y_val, gb_y_pred, weights='quadratic'))
