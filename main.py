@@ -92,6 +92,16 @@ print("XGBOrdinal Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_va
 feat_imp = ordinal_model.feature_importance(importance_type='gain')
 feat_imp_sorted = sorted(feat_imp.items(), key=lambda x: x[1], reverse=True)
 
-print("\nFeature importances (most to least):")
-for feature, importance in feat_imp_sorted:
-    print(f"{feature}: {importance:.4f}")
+# Selecting only features with importance >= 3
+important_features = [feature for feature, importance in feat_imp_sorted if importance >= 1]
+
+# Filter X to keep only important features
+X_important = X[important_features]
+
+# Split and retrain as before
+X_train_imp, X_val_imp, y_train, y_val = skl.model_selection.train_test_split(X_important, y, test_size=0.2, random_state=23)
+
+ordinal_model.fit(X_train_imp, y_train)
+y_pred_ordinal_imp = ordinal_model.predict(X_val_imp)
+
+print("XGBOrdinal QWK (important features only):", skl.metrics.cohen_kappa_score(y_val, y_pred_ordinal_imp, weights='quadratic'))
