@@ -1,4 +1,4 @@
-from libraries import pd, np, xgb, skl, plt, lgb, optuna, ft, XGBOrdinal
+from libraries import pd, np, xgb, skl, plt, lgb, optuna, ft, XGBOrdinal, shap
 # Reading csv with pd to create DataFrames
 df_train = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
@@ -59,12 +59,11 @@ for col in cat_cols:
 X = df_train.drop(['Response','Id'], axis=1)
 
 #* Target (-1 so values start at 0)
-y = df_train['Response'] - 1
+y = df_train['Response']
 
 # Setting up training and validation sets
-# We split data into 80% training set and 20% validation set
-# This is done to evaluate the models performance on unseen data
-X_train, X_val, y_train, y_val = skl.model_selection.train_test_split(X, y, test_size=0.2, random_state=23)
+# Stratified to ensure class distribution is equal over both set
+X_train, X_val, y_train, y_val = skl.model_selection.train_test_split(X, y, test_size=0.2, random_state=23, stratify=y)
 
 # Testing xgbordinal. The problem with xgboost was the fact it wouldn't respond to the ordinal nature of response.
 # The "Response" column is ordinal because its values (1–8) have a natural order—higher numbers mean higher risk.
@@ -87,21 +86,5 @@ y_pred_ordinal = ordinal_model.predict(X_val)
 print("XGBOrdinal Quadratic Weighted Kappa:", skl.metrics.cohen_kappa_score(y_val, y_pred_ordinal, weights='quadratic'))
 
 
-# * Feature importance
+# * Feature engineering time!
 
-feat_imp = ordinal_model.feature_importance(importance_type='gain')
-feat_imp_sorted = sorted(feat_imp.items(), key=lambda x: x[1], reverse=True)
-
-# Selecting only features with importance >= 3
-important_features = [feature for feature, importance in feat_imp_sorted if importance >= 1]
-
-# Filter X to keep only important features
-X_important = X[important_features]
-
-# Split and retrain as before
-X_train_imp, X_val_imp, y_train, y_val = skl.model_selection.train_test_split(X_important, y, test_size=0.2, random_state=23)
-
-ordinal_model.fit(X_train_imp, y_train)
-y_pred_ordinal_imp = ordinal_model.predict(X_val_imp)
-
-print("XGBOrdinal QWK (important features only):", skl.metrics.cohen_kappa_score(y_val, y_pred_ordinal_imp, weights='quadratic'))
